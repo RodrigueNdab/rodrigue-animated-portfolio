@@ -266,3 +266,8 @@ body.cursor-disabled * {
   animation: stamp-spin 14s linear infinite;
   transform-origin: center;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

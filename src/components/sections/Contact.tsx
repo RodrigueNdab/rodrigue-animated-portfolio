@@ -9,19 +9,20 @@ import { EASE } from '@/lib/motion';
 import { site } from '@/lib/site';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
-const Contact = () => {
+interface ContactProps {
+  formEnabled?: boolean;
+}
+
+const Contact = ({ formEnabled = false }: ContactProps) => {
   const sectionRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
 
-  const headingWords = [
-    { t: "LET'S" },
-    { t: 'talk', serif: true },
-  ];
+  const headingWords = [{ t: 'GET IN' }, { t: 'touch', serif: true }];
 
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '', website: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
@@ -76,7 +77,7 @@ const Contact = () => {
             duration: 0.9,
             ease: EASE.outCubic,
             scrollTrigger: { trigger: card, start: 'top 90%', once: true },
-          }
+          },
         );
       }
       if (cta) {
@@ -89,7 +90,7 @@ const Contact = () => {
             duration: 0.8,
             ease: EASE.outCubic,
             scrollTrigger: { trigger: cta, start: 'top 94%', once: true },
-          }
+          },
         );
       }
     },
@@ -139,7 +140,7 @@ const Contact = () => {
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await fetch('/api/contact/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -150,7 +151,7 @@ const Contact = () => {
       if (response.ok && data.success) {
         setSubmitStatus('success');
         setSuccessMessage(data.message || 'Thank you! Your message has been sent successfully.');
-        setFormData({ name: '', email: '', message: '' });
+        setFormData({ name: '', email: '', message: '', website: '' });
       } else {
         setSubmitStatus('error');
         if (data?.error) {
@@ -168,7 +169,11 @@ const Contact = () => {
   const isDisabled = isSubmitting;
 
   return (
-    <section ref={sectionRef} id="contact" className="bg-ink text-light pt-12 pb-16 md:pt-14 md:pb-24 relative overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="contact"
+      className="bg-ink text-light pt-12 pb-16 md:pt-14 md:pb-24 relative overflow-hidden"
+    >
       <div ref={containerRef} className="max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 w-full">
         <div
           ref={cardRef}
@@ -180,146 +185,182 @@ const Contact = () => {
           />
           <div className="max-w-2xl mb-12">
             <ScrollWordReveal
-              text="Have a project in mind or just want to say hello? Feel free to reach out."
+              text="Open to research collaborations, evidence-synthesis projects, and speaking invitations. Feel free to reach out by email."
               offset={['start 0.95', 'end 0.7']}
               className="text-base sm:text-lg text-gray-soft font-sans leading-relaxed"
             />
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="max-w-2xl space-y-6 p-6 sm:p-8 rounded-2xl mx-auto bg-surface-mid border border-white/[0.04]"
-          >
-            <div className="flex flex-col gap-2">
-              <label htmlFor="name" className="font-medium text-sm sm:text-base text-muted">
-                Your Name <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Your Name"
-                autoComplete="name"
-                aria-invalid={!!errors.name}
-                aria-describedby={errors.name ? 'name-error' : undefined}
-                className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl bg-surface text-cream placeholder-[#6a6a68] focus:outline-none transition-all duration-300 border-white/[0.08] focus:border-accent focus:ring-1 focus:ring-accent/30 ${
-                  errors.name ? 'border-red-500 focus:border-red-500' : ''
-                }`}
-                disabled={isDisabled}
-              />
-              {errors.name && <p id="name-error" className="text-red-400 text-xs sm:text-sm">{errors.name}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="email" className="font-medium text-sm sm:text-base text-muted">
-                Your Email <span className="text-red-400">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                autoComplete="email"
-                placeholder="you@example.com"
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'email-error' : undefined}
-                className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl bg-surface text-cream placeholder-[#6a6a68] focus:outline-none transition-all duration-300 border-white/[0.08] focus:border-accent focus:ring-1 focus:ring-accent/30 ${
-                  errors.email ? 'border-red-500 focus:border-red-500' : ''
-                }`}
-                disabled={isDisabled}
-              />
-              {errors.email && <p id="email-error" className="text-red-400 text-xs sm:text-sm">{errors.email}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="message" className="font-medium text-sm sm:text-base text-muted">
-                Message <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows={5}
-                value={formData.message}
-                onChange={handleChange}
-                placeholder="Write your message here..."
-                aria-invalid={!!errors.message}
-                aria-describedby={errors.message ? 'message-error' : undefined}
-                className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl bg-surface text-cream placeholder-[#6a6a68] resize-none focus:outline-none transition-all duration-300 border-white/[0.08] focus:border-accent focus:ring-1 focus:ring-accent/30 ${
-                  errors.message ? 'border-red-500 focus:border-red-500' : ''
-                }`}
-                disabled={isDisabled}
-              />
-              {errors.message && <p id="message-error" className="text-red-400 text-xs sm:text-sm">{errors.message}</p>}
-              <p className="text-xs text-gray-soft">{formData.message.length} / 30 minimum characters</p>
-            </div>
-
-            <div role="status" aria-live="polite">
-              {errors.server && (
-                <div className="p-4 bg-red-900/20 border border-red-600/40 rounded-xl mb-4">
-                  <p className="text-red-400 text-sm">{errors.server}</p>
-                </div>
-              )}
-
-              {submitStatus === 'success' && (
-                <div className="p-4 bg-green-900/20 border border-green-600/40 rounded-xl mb-4">
-                  <p className="text-green-400 text-sm">{successMessage}</p>
-                </div>
-              )}
-
-              {submitStatus === 'error' && !errors.server && (
-                <div className="p-4 bg-red-900/20 border border-red-600/40 rounded-xl mb-4">
-                  <p className="text-red-400 text-sm">Something went wrong. Please try again later.</p>
-                </div>
-              )}
-            </div>
-
-            <div className="w-full flex justify-center md:justify-start">
-              <button
-                type="submit"
-                disabled={isDisabled}
-                className="inline-block border-0 bg-transparent p-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <AnimatedButton
-                  topText={isDisabled ? 'PLEASE WAIT...' : 'SEND MESSAGE'}
-                  bottomText={isDisabled ? 'PROCESSING' : 'PROCEED →'}
-                  variant="primary"
-                  as="span"
-                  className={isDisabled ? 'pointer-events-none' : ''}
+          {formEnabled && (
+            <form
+              onSubmit={handleSubmit}
+              className="max-w-2xl space-y-6 p-6 sm:p-8 rounded-2xl mx-auto bg-surface-mid border border-white/[0.04]"
+            >
+              <div className="hidden" aria-hidden="true">
+                <label htmlFor="website">Leave this field empty</label>
+                <input
+                  id="website"
+                  name="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={formData.website}
+                  onChange={handleChange}
                 />
-              </button>
-            </div>
-          </form>
+              </div>
 
-          <div className="mt-16 pt-12 border-t border-elevated-dark flex flex-col items-center justify-center text-center w-full">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="name" className="font-medium text-sm sm:text-base text-muted">
+                  Your Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Your Name"
+                  autoComplete="name"
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? 'name-error' : undefined}
+                  className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl bg-surface text-cream placeholder-[#6a6a68] focus:outline-none transition-all duration-300 border-white/[0.08] focus:border-accent focus:ring-1 focus:ring-accent/30 ${
+                    errors.name ? 'border-red-500 focus:border-red-500' : ''
+                  }`}
+                  disabled={isDisabled}
+                />
+                {errors.name && (
+                  <p id="name-error" className="text-red-400 text-xs sm:text-sm">
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="email" className="font-medium text-sm sm:text-base text-muted">
+                  Your Email <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
+                  className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl bg-surface text-cream placeholder-[#6a6a68] focus:outline-none transition-all duration-300 border-white/[0.08] focus:border-accent focus:ring-1 focus:ring-accent/30 ${
+                    errors.email ? 'border-red-500 focus:border-red-500' : ''
+                  }`}
+                  disabled={isDisabled}
+                />
+                {errors.email && (
+                  <p id="email-error" className="text-red-400 text-xs sm:text-sm">
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="message" className="font-medium text-sm sm:text-base text-muted">
+                  Message <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={5}
+                  value={formData.message}
+                  onChange={handleChange}
+                  placeholder="Write your message here..."
+                  aria-invalid={!!errors.message}
+                  aria-describedby={errors.message ? 'message-error' : undefined}
+                  className={`w-full px-4 py-3 text-sm sm:text-base border rounded-xl bg-surface text-cream placeholder-[#6a6a68] resize-none focus:outline-none transition-all duration-300 border-white/[0.08] focus:border-accent focus:ring-1 focus:ring-accent/30 ${
+                    errors.message ? 'border-red-500 focus:border-red-500' : ''
+                  }`}
+                  disabled={isDisabled}
+                />
+                {errors.message && (
+                  <p id="message-error" className="text-red-400 text-xs sm:text-sm">
+                    {errors.message}
+                  </p>
+                )}
+                <p className="text-xs text-gray-soft">
+                  {formData.message.length} / 30 minimum characters
+                </p>
+              </div>
+
+              <div role="status" aria-live="polite">
+                {errors.server && (
+                  <div className="p-4 bg-red-900/20 border border-red-600/40 rounded-xl mb-4">
+                    <p className="text-red-400 text-sm">{errors.server}</p>
+                  </div>
+                )}
+
+                {submitStatus === 'success' && (
+                  <div className="p-4 bg-green-900/20 border border-green-600/40 rounded-xl mb-4">
+                    <p className="text-green-400 text-sm">{successMessage}</p>
+                  </div>
+                )}
+
+                {submitStatus === 'error' && !errors.server && (
+                  <div className="p-4 bg-red-900/20 border border-red-600/40 rounded-xl mb-4">
+                    <p className="text-red-400 text-sm">
+                      Something went wrong. Please try again later.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="w-full flex justify-center md:justify-start">
+                <button
+                  type="submit"
+                  disabled={isDisabled}
+                  className="inline-block border-0 bg-transparent p-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <AnimatedButton
+                    topText={isDisabled ? 'PLEASE WAIT...' : 'SEND MESSAGE'}
+                    bottomText={isDisabled ? 'PROCESSING' : 'PROCEED →'}
+                    variant="primary"
+                    as="span"
+                    className={isDisabled ? 'pointer-events-none' : ''}
+                  />
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div
+            className={`${formEnabled ? 'mt-16 pt-12 border-t border-elevated-dark' : ''} flex flex-col items-center justify-center text-center w-full`}
+          >
             <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center text-center">
-              <p className="text-xs uppercase tracking-widest text-warm mb-3 font-mono text-center">
+              <p className="text-xs uppercase tracking-widest text-gray-soft mb-3 font-mono text-center">
                 Direct Contact
               </p>
 
               <div ref={ctaRef} className="inline-block">
-                <button
-                  type="button"
-                  aria-label={`Copy ${site.email} to clipboard`}
-                  onClick={() => {
-                    navigator.clipboard.writeText(site.email);
-                    setCopiedToast(true);
-                  }}
-                  className="group relative inline-flex items-center justify-center cursor-pointer text-light font-display font-black uppercase leading-tight hover:text-accent transition-colors duration-300 max-w-full text-center"
-                  style={{
-                    fontSize: 'clamp(1.1rem, 4.2vw, 3rem)',
-                  }}
+                <a
+                  href={`mailto:${site.email}`}
+                  className="group relative inline-flex items-center justify-center text-light font-display font-black leading-tight hover:text-accent transition-colors duration-300 max-w-full text-center"
+                  style={{ fontSize: 'clamp(1.1rem, 3.6vw, 2.5rem)' }}
                 >
                   <span className="break-all sm:break-normal">{site.email}</span>
-                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-accent origin-center scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out block" />
-                </button>
+                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-accent origin-center scale-x-0 group-hover:scale-x-100 group-focus-visible:scale-x-100 transition-transform duration-500 ease-out block" />
+                </a>
               </div>
 
-              <span className="font-mono text-[11px] text-warm/70 uppercase tracking-widest mt-2 block text-center">
-                Click to copy email address
-              </span>
+              <button
+                type="button"
+                aria-label={`Copy ${site.email} to clipboard`}
+                onClick={() => {
+                  navigator.clipboard
+                    ?.writeText(site.email)
+                    .then(() => setCopiedToast(true))
+                    .catch(() => {});
+                }}
+                className="font-mono text-[11px] text-gray-soft uppercase tracking-widest mt-3 underline underline-offset-4 hover:text-accent transition-colors duration-300"
+              >
+                Copy email address
+              </button>
             </div>
           </div>
         </div>

@@ -16,6 +16,16 @@ declare global {
 
 let _isCurtainCovering = false;
 
+const HOME_SCROLL_KEY = 'home-scroll';
+
+const isPublicationPage = (path?: string | null) => !!path && /^\/publication\/[^/]+\/?$/.test(path);
+
+const getReturnTarget = () => {
+  const saved = safeSessionStorage.getItem(HOME_SCROLL_KEY);
+  const path = window.location.pathname;
+  return saved && (path === '/' || path === '') ? parseInt(saved, 10) : 0;
+};
+
 function restoreScroll(target: number, lenisInst: React.RefObject<Lenis | null> | null) {
   const lenisObj = lenisInst?.current || (typeof window !== 'undefined' ? window.__lenis : null);
   document.documentElement.scrollTop = target;
@@ -51,7 +61,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (pathname && pathname.startsWith('/projects/')) {
+    if (isPublicationPage(pathname)) {
       if (!history.state || history.state.isDummy !== true) {
         history.pushState({ isDummy: true }, '', window.location.href);
       }
@@ -70,9 +80,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           history.back();
           setTimeout(() => {
             if (_isCurtainCovering) {
-              const savedScroll = safeSessionStorage.getItem('projects-scroll');
-              const target = savedScroll ? parseInt(savedScroll, 10) : 0;
-              playCurtainOut(target);
+              playCurtainOut(getReturnTarget());
             }
           }, 1500);
         },
@@ -116,22 +124,18 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
     const handlePopState = (event: PopStateEvent) => {
       const path = window.location.pathname;
-      const isProjectPage = path.startsWith('/projects/');
-
-      if (isProjectPage && (!event.state || event.state.isDummy !== true)) {
+      if (isPublicationPage(path) && (!event.state || event.state.isDummy !== true)) {
         playCurtainIn();
         return;
       }
 
-      if ((path === '/' || path === '') && _isCurtainCovering) {
-        const savedScroll = safeSessionStorage.getItem('projects-scroll');
-        const target = savedScroll ? parseInt(savedScroll, 10) : 0;
-        playCurtainOut(target);
+      if (_isCurtainCovering) {
+        playCurtainOut(getReturnTarget());
         return;
       }
 
       if (path === '/' || path === '') {
-        const savedScroll = safeSessionStorage.getItem('projects-scroll');
+        const savedScroll = safeSessionStorage.getItem(HOME_SCROLL_KEY);
         if (savedScroll) {
           restoreScroll(parseInt(savedScroll, 10), lenisRef.current);
         }
@@ -147,8 +151,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       auto={true}
       leave={(next: () => void, _from?: string, to?: string) => {
         if (lenis?.current) lenis.current.stop();
-        const isGoingToProject = to ? to.startsWith('/projects/') : false;
-        const savedScroll = safeSessionStorage.getItem('projects-scroll');
+        const isGoingToProject = isPublicationPage(to);
+        const savedScroll = safeSessionStorage.getItem(HOME_SCROLL_KEY);
         const isReturningHome = (to === '/' || to === '' || !to) && savedScroll && !isGoingToProject;
         if (isGoingToProject) safeSessionStorage.setItem('navigating-to-project', 'true');
         scrollTargetRef.current = isReturningHome ? parseInt(savedScroll, 10) : 0;
@@ -225,10 +229,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
         tl.add(() => {
           const isNavigatingToProject = safeSessionStorage.getItem('navigating-to-project') === 'true';
-          const savedScroll = safeSessionStorage.getItem('projects-scroll');
+          const savedScroll = safeSessionStorage.getItem(HOME_SCROLL_KEY);
           if (!isNavigatingToProject && savedScroll) {
             scrollTargetRef.current = parseInt(savedScroll, 10);
-            safeSessionStorage.removeItem('projects-scroll');
+            safeSessionStorage.removeItem(HOME_SCROLL_KEY);
           } else {
             scrollTargetRef.current = 0;
           }

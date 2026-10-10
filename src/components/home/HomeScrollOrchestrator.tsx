@@ -37,10 +37,8 @@ export default function HomeScrollOrchestrator({
       const updatePointerEvents = (self: ScrollTrigger) => {
         if (self.progress >= 0.85) {
           home.style.pointerEvents = 'none';
-          window.dispatchEvent(new CustomEvent('pause-ambient-geometry'));
         } else {
           home.style.pointerEvents = 'auto';
-          window.dispatchEvent(new CustomEvent('resume-ambient-geometry'));
         }
       };
 
@@ -54,11 +52,9 @@ export default function HomeScrollOrchestrator({
             onUpdate: updatePointerEvents,
             onLeave: () => {
               home.style.pointerEvents = 'none';
-              window.dispatchEvent(new CustomEvent('pause-ambient-geometry'));
             },
             onEnterBack: () => {
               home.style.pointerEvents = 'auto';
-              window.dispatchEvent(new CustomEvent('resume-ambient-geometry'));
             },
             onRefresh: updatePointerEvents,
           },
@@ -75,20 +71,29 @@ export default function HomeScrollOrchestrator({
   }, []);
 
   useEffect(() => {
+    let target = '';
     if (typeof window !== 'undefined' && window.location.hash) {
+      target = decodeURIComponent(window.location.hash.slice(1));
       window.history.replaceState(null, '', window.location.pathname);
     }
 
     try {
-      const target = sessionStorage.getItem('nav_target_section');
-      if (target) {
+      const stored = sessionStorage.getItem('nav_target_section');
+      if (stored) {
         sessionStorage.removeItem('nav_target_section');
-        const timer = setTimeout(() => {
-          scrollToSection(target);
-        }, 350);
-        return () => clearTimeout(timer);
+        target = stored;
       }
     } catch {}
+
+    if (!target) return;
+    const run = () => scrollToSection(target);
+    if (window.__preloaderDone === true) {
+      const timer = setTimeout(run, 350);
+      return () => clearTimeout(timer);
+    }
+    const onReady = () => setTimeout(run, 350);
+    window.addEventListener('preloaderComplete', onReady, { once: true });
+    return () => window.removeEventListener('preloaderComplete', onReady);
   }, []);
 
   return (

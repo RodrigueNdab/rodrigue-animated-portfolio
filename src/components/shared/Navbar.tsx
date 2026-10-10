@@ -6,10 +6,9 @@ import { useTransitionState } from 'next-transition-router';
 import { useLenis } from '@/components/providers/SmoothScrollProvider';
 import AnimatedLink from '@/components/ui/AnimateLink';
 import { useHandleLinkClick } from '@/lib/navigation';
-import { site, socials } from '@/lib/site';
+import { site, socialList, navLinks } from '@/lib/site';
 import Link from 'next/link';
 import Lenis from 'lenis';
-import { Copyright } from 'lucide-react';
 import Magnetic from '@/components/ui/Magnetic';
 
 interface MagneticHamburgerButtonProps {
@@ -130,22 +129,11 @@ const NavbarBrand: React.FC<NavbarBrandProps> = ({ logoRef, handleLinkClick }) =
           handleLinkClick('/#top');
         }}
         className="group flex items-center cursor-pointer select-none py-1 text-warm"
-        aria-label="Aitezaz Sikandar Home"
+        aria-label={`${site.name} — Home`}
       >
-        <div className="transition-transform duration-500 ease-in-expo group-hover:rotate-[360deg] flex items-center justify-center">
-          <Copyright className="w-[18px] h-[18px]" />
-        </div>
-        <div className="relative ms-2 flex items-center whitespace-nowrap text-warm text-lg font-sans tracking-wide font-medium leading-none">
-          <span>aitezaz</span>
-          <span className="relative inline-flex items-center overflow-hidden transition-all duration-500 ease-in-expo w-[32px] group-hover:w-[86px]">
-            <span className="transition-transform duration-500 ease-in-expo group-hover:-translate-x-full inline-block">
-              dev
-            </span>
-            <span className="absolute left-0 ps-1.5 transition-transform duration-500 ease-in-expo translate-x-full group-hover:translate-x-0 inline-block">
-              sikandar
-            </span>
-          </span>
-        </div>
+        <span className="whitespace-nowrap text-warm text-lg font-sans tracking-wide font-medium leading-none transition-colors duration-300 group-hover:text-charcoal">
+          {site.name}
+        </span>
       </Link>
     </Magnetic>
   );
@@ -161,7 +149,7 @@ interface FullscreenMenuProps {
   isOpen: boolean;
   onClose: () => void;
   handleLinkClick: (href: string) => void;
-  links: LinkItem[];
+  links: readonly LinkItem[];
 }
 
 const FullscreenMenu: React.FC<FullscreenMenuProps> = ({ isOpen, onClose, handleLinkClick, links }) => {
@@ -198,6 +186,14 @@ const FullscreenMenu: React.FC<FullscreenMenuProps> = ({ isOpen, onClose, handle
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      containerRef.current?.querySelector<HTMLButtonElement>('nav button')?.focus();
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen === prevOpenRef.current) return;
@@ -366,6 +362,10 @@ const FullscreenMenu: React.FC<FullscreenMenuProps> = ({ isOpen, onClose, handle
   return (
     <div
       ref={containerRef}
+      id="fullscreen-menu"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Site navigation"
       style={{ visibility: 'hidden', pointerEvents: 'none' }}
       className="fixed inset-0 z-[9980]"
       aria-hidden={!isOpen}
@@ -409,12 +409,12 @@ const FullscreenMenu: React.FC<FullscreenMenuProps> = ({ isOpen, onClose, handle
             <span className="text-gray-mid font-mono text-xs tracking-widest uppercase">Navigation</span>
           </div>
 
-          <nav className="absolute top-[80px] bottom-[170px] md:bottom-[100px] left-0 right-0 flex flex-col justify-center px-8 sm:px-10 md:px-14 gap-2 md:gap-3">
+          <nav className="absolute top-[80px] bottom-[170px] md:bottom-[100px] left-0 right-0 flex flex-col justify-center px-8 sm:px-10 md:px-14 gap-0 md:gap-1">
             {links.map((link, i) => (
               <div
                 key={link.href}
                 ref={(el) => { linkRowRefs.current[i] = el; }}
-                className="overflow-hidden py-1.5 md:py-2"
+                className="overflow-hidden py-1 md:py-1.5"
               >
                 <div
                   ref={(el) => { magnetRefs.current[i] = el; }}
@@ -429,7 +429,7 @@ const FullscreenMenu: React.FC<FullscreenMenuProps> = ({ isOpen, onClose, handle
                     <span className="text-gray-mid font-mono text-xs md:text-sm transition-colors duration-300 group-hover:text-accent">
                       {String(i + 1).padStart(2, '0')}
                     </span>
-                    <span className="font-display text-[2.8rem] sm:text-[3.4rem] md:text-[3.8rem] lg:text-[4.4rem] xl:text-[4.8rem] font-black uppercase leading-none tracking-tight text-cream group-hover:text-accent transition-colors duration-300 flex overflow-hidden">
+                    <span className="font-display text-[1.75rem] sm:text-[2.2rem] md:text-[2.4rem] xl:text-[2.6rem] font-black uppercase leading-none tracking-tight text-cream group-hover:text-accent transition-colors duration-300 flex overflow-hidden">
                       {link.name}
                     </span>
                     <span className="text-accent text-2xl md:text-3xl lg:text-4xl opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0">
@@ -459,7 +459,7 @@ const FullscreenMenu: React.FC<FullscreenMenuProps> = ({ isOpen, onClose, handle
             </div>
 
             <div className="flex gap-4 md:gap-6 justify-start flex-wrap">
-              {[socials.github, socials.source, socials.linkedin].map((s) => (
+              {socialList.slice(0, 4).map((s) => (
                 <Magnetic key={s.label} strength={0.3}>
                   <a
                     href={s.href}
@@ -568,7 +568,7 @@ const Navbar: React.FC<NavbarProps> = ({ hamburgerOnly = false }) => {
     gsap.set(nav, { y: -120 * scrollProgress, opacity: 1 });
     if (mobileNav) gsap.set(mobileNav, { y: -190 * scrollProgress, opacity: 1 });
 
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < 1280;
     if (isMobile) {
       gsap.set(hamburger, { opacity: 1, scale: 1 });
     } else {
@@ -595,7 +595,7 @@ const Navbar: React.FC<NavbarProps> = ({ hamburgerOnly = false }) => {
     const mobileNav = mobileNavRef.current;
     if (!nav || !hamburger) return;
 
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < 1280;
 
     const scrollTrigger = ScrollTrigger.create({
       trigger: 'body',
@@ -657,13 +657,7 @@ const Navbar: React.FC<NavbarProps> = ({ hamburgerOnly = false }) => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const handleLinkClick = useHandleLinkClick(setIsMenuOpen);
 
-  const links = [
-    { name: 'Home', href: '/#top', menuOnly: true },
-    { name: 'About', href: '/#about' },
-    { name: 'Services', href: '/#services' },
-    { name: 'Work', href: '/#projects' },
-    { name: 'Contact', href: '/#contact' },
-  ];
+  const links = navLinks;
 
   const navStyle: React.CSSProperties = {
     opacity: isTransitioning ? 0 : 1,
@@ -676,14 +670,14 @@ const Navbar: React.FC<NavbarProps> = ({ hamburgerOnly = false }) => {
       {!hamburgerOnly && (
         <nav
           ref={navRef}
-          className="hidden md:block fixed w-full py-6 z-50 bg-transparent"
+          className="hidden xl:block fixed w-full py-6 z-50 bg-transparent"
           style={navStyle}
         >
           <div className="w-full px-6 sm:px-8 md:px-12 lg:px-16 flex justify-between items-center">
             <NavbarBrand logoRef={logoRef} handleLinkClick={handleLinkClick} />
             <ul
               ref={linksContainerRef}
-              className="flex gap-6 text-warm text-base font-sans font-medium uppercase tracking-wider"
+              className="flex gap-6 text-warm text-sm font-sans font-medium uppercase tracking-wider"
             >
               {links.filter((l) => !l.menuOnly).map((link) => (
                 <AnimatedLink key={link.href}>
@@ -706,7 +700,7 @@ const Navbar: React.FC<NavbarProps> = ({ hamburgerOnly = false }) => {
       {!hamburgerOnly && (
         <nav
           ref={mobileNavRef}
-          className="mobile-navbar md:hidden fixed w-full z-50 bg-transparent"
+          className="mobile-navbar xl:hidden fixed w-full z-50 bg-transparent"
           style={navStyle}
         >
           <div className="flex justify-between items-center px-6 sm:px-8 h-20 w-full">
