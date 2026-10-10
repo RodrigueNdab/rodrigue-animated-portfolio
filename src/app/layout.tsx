@@ -7,35 +7,38 @@
  * Website: https://aitezazdev.vercel.app
  */
 
-import { Geist, Geist_Mono, Space_Grotesk, Instrument_Serif } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import ClientLayout from './ClientLayout';
 import { siteMetadata } from '@/lib/metadata';
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: './fonts/Geist-Variable.woff2',
   variable: '--font-geist-sans',
-  subsets: ['latin'],
-  preload: true,
+  weight: '100 900',
   display: 'swap',
 });
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: './fonts/GeistMono-Variable.woff2',
   variable: '--font-geist-mono',
-  subsets: ['latin'],
-  preload: true,
+  weight: '100 900',
   display: 'swap',
 });
-const spaceGrotesk = Space_Grotesk({
+const spaceGrotesk = localFont({
+  src: [
+    { path: './fonts/space-grotesk-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/space-grotesk-latin-500-normal.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/space-grotesk-latin-700-normal.woff2', weight: '700', style: 'normal' },
+  ],
   variable: '--font-space-grotesk',
-  subsets: ['latin'],
-  preload: true,
   display: 'swap',
 });
-const instrumentSerif = Instrument_Serif({
+const instrumentSerif = localFont({
+  src: [
+    { path: './fonts/instrument-serif-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/instrument-serif-latin-400-italic.woff2', weight: '400', style: 'italic' },
+  ],
   variable: '--font-instrument-serif',
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  preload: true,
   display: 'swap',
 });
 export const metadata = siteMetadata;
