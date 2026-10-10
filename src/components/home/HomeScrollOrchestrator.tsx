@@ -91,9 +91,15 @@ export default function HomeScrollOrchestrator({
       const timer = setTimeout(run, 350);
       return () => clearTimeout(timer);
     }
-    const onReady = () => setTimeout(run, 350);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onReady = () => {
+      timer = setTimeout(run, 350);
+    };
     window.addEventListener('preloaderComplete', onReady, { once: true });
-    return () => window.removeEventListener('preloaderComplete', onReady);
+    return () => {
+      window.removeEventListener('preloaderComplete', onReady);
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   return (

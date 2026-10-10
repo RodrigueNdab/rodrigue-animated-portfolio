@@ -196,7 +196,7 @@ const Contact = ({ formEnabled = false }: ContactProps) => {
               onSubmit={handleSubmit}
               className="max-w-2xl space-y-6 p-6 sm:p-8 rounded-2xl mx-auto bg-surface-mid border border-white/[0.04]"
             >
-              <div className="hidden" aria-hidden="true">
+              <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
                 <label htmlFor="website">Leave this field empty</label>
                 <input
                   id="website"

@@ -217,6 +217,7 @@ export async function POST(request: Request) {
           message: 'Thank you! Your message has been sent successfully.',
         });
       }
+      console.error('Resend delivery failed with status', resendRes.status);
       if (!config.useSmtp) {
         throw new Error(`Resend responded with status ${resendRes.status}`);
       }
