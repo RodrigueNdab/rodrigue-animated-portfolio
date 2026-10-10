@@ -23,7 +23,9 @@ export default function SmoothScrollProvider({ children }: { children: React.Rea
       typeof window !== 'undefined' &&
       ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 768);
 
-    if (isTouch) {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isTouch || prefersReducedMotion) {
       aliveRef.current = true;
       const refreshTimer = setTimeout(() => {
         ScrollTrigger.refresh();

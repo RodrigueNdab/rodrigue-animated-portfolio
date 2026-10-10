@@ -42,7 +42,7 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       break;
     case 'primary':
       bgColor = 'bg-accent';
-      textColor = 'text-white';
+      textColor = 'text-[#0A0F0D]';
       borderColor = 'border border-accent';
       rippleColor = 'rgba(255, 255, 255, 0.25)';
       hoverBgColor = '#059669';

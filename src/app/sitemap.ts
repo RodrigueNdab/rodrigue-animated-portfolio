@@ -1,22 +1,28 @@
 import type { MetadataRoute } from 'next';
-import { getAllProjects } from '@/lib/projects';
+import { publications } from '@/content/publications';
 import { site } from '@/lib/site';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const projects = getAllProjects().map((p) => ({
-    url: `${site.url}/projects/${p.slug}`,
+  const publicationPages = publications.map((p) => ({
+    url: `${site.url}/publication/${p.slug}/`,
     lastModified: new Date(),
-    changeFrequency: 'monthly' as const,
-    priority: 0.8,
+    changeFrequency: 'yearly' as const,
+    priority: 0.6,
   }));
 
   return [
     {
       url: site.url,
       lastModified: new Date(),
-      changeFrequency: 'weekly',
+      changeFrequency: 'monthly',
       priority: 1,
     },
-    ...projects,
+    {
+      url: `${site.url}/publication/`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    ...publicationPages,
   ];
 }

@@ -4,23 +4,20 @@ import { useRouter } from 'next/navigation';
 import { useLenis } from '@/components/providers/SmoothScrollProvider';
 import Lenis from 'lenis';
 
+export const HOME_SCROLL_KEY = 'home-scroll';
+
+/** Remember the home-page scroll position so returning from a publication page restores it. */
+export const rememberHomeScroll = () => {
+  if (typeof window === 'undefined' || window.location.pathname !== '/') return;
+  try {
+    sessionStorage.setItem(HOME_SCROLL_KEY, String(window.scrollY || window.pageYOffset));
+  } catch {}
+};
+
 export const getSectionElement = (targetId: string): HTMLElement | null => {
   if (!targetId || targetId === 'top' || targetId === 'home') return null;
-  const id = targetId.toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (id === 'about') {
+  if (targetId === 'about') {
     return document.getElementById('about-section-wrapper') || document.getElementById('about');
-  }
-  if (id === 'services' || id === 'whatido') {
-    return document.getElementById('services');
-  }
-  if (id === 'projects' || id === 'work') {
-    return document.getElementById('projects');
-  }
-  if (id === 'contact' || id === 'getintouch') {
-    return document.getElementById('contact');
-  }
-  if (id === 'techstack' || id === 'stack') {
-    return document.getElementById('tech-stack') || document.getElementById('TechStack');
   }
   return document.getElementById(targetId);
 };
@@ -123,4 +120,3 @@ export const useHandleLinkClick = (setIsMenuOpen?: (isOpen: boolean) => void) =>
     }
   };
 };
-

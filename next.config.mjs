@@ -16,6 +16,7 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  trailingSlash: true,
 };
 
 export default nextConfig;

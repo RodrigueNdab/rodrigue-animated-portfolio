@@ -3,7 +3,7 @@ import { site } from '@/lib/site';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${site.name} — Full Stack Developer`,
+    name: site.title,
     short_name: site.name,
     description: site.tagline,
     start_url: '/',
@@ -12,9 +12,9 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#34D399',
     icons: [
       {
-        src: '/logo.webp',
+        src: '/icon.svg',
         sizes: 'any',
-        type: 'image/webp',
+        type: 'image/svg+xml',
       },
     ],
   };

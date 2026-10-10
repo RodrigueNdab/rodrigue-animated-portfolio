@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import fs from 'fs';
-import path from 'path';
-import { site } from '@/lib/site';
+import { getContactConfig } from '@/lib/contactConfig';
 
 interface ContactRequestBody {
   name?: string;
   email?: string;
   message?: string;
+  website?: string;
 }
 
 const ipCache = new Map<string, { count: number; expires: number }>();
@@ -47,6 +46,14 @@ function cleanHeader(input: string): string {
 }
 
 export async function POST(request: Request) {
+  const config = getContactConfig();
+  if (!config.enabled) {
+    return NextResponse.json(
+      { success: false, error: 'The contact form is not available. Please email directly.' },
+      { status: 503 },
+    );
+  }
+
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
 
   if (isRateLimited(ip)) {
@@ -55,7 +62,7 @@ export async function POST(request: Request) {
         success: false,
         error: 'Too many requests. Please try again later.',
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -68,6 +75,9 @@ export async function POST(request: Request) {
     name = body.name || '';
     email = body.email || '';
     message = body.message || '';
+    if (body.website) {
+      return NextResponse.json({ success: true, message: 'Thank you!' });
+    }
   } catch {
     return NextResponse.json(
       {
@@ -128,10 +138,7 @@ export async function POST(request: Request) {
 
     const parts = email.split('@');
     if (parts.length < 2) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid email format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid email format' }, { status: 400 });
     }
 
     const domain = parts[1].toLowerCase();
@@ -162,13 +169,13 @@ export async function POST(request: Request) {
     if (trimmedName.length < 2) {
       return NextResponse.json(
         { success: false, error: 'Name must be at least 2 characters long' },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (!/[a-zA-Z]/.test(trimmedName)) {
       return NextResponse.json(
         { success: false, error: 'Name must contain at least one letter' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -176,28 +183,31 @@ export async function POST(request: Request) {
     if (trimmedMessage.length < 30) {
       return NextResponse.json(
         { success: false, error: 'Please enter a meaningful message (at least 30 characters)' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const escapedName = escapeHtml(trimmedName);
     const cleanReplyEmail = cleanHeader(email.trim());
     const escapedMessage = escapeHtml(trimmedMessage).replace(/\n/g, '<br>');
-    const recipientEmail = process.env.CONTACT_EMAIL || site.email;
+    const recipientEmail = config.to as string;
+    const fromEmail = cleanHeader(config.from as string);
+    const subject = `New message from ${cleanHeader(trimmedName)}`;
+    const html = `<p><strong>Name:</strong> ${escapedName}</p><p><strong>Email:</strong> ${escapeHtml(cleanReplyEmail)}</p><p><strong>Message:</strong></p><p>${escapedMessage}</p>`;
 
-    if (process.env.RESEND_API_KEY) {
+    if (config.useResend) {
       const resendRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+          Authorization: 'Bearer ' + config.resendKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Portfolio Contact <onboarding@resend.dev>',
+          from: fromEmail,
           to: [recipientEmail],
           reply_to: cleanReplyEmail,
-          subject: `New message from ${cleanHeader(trimmedName)}`,
-          html: `<p><strong>Name:</strong> ${escapedName}</p><p><strong>Email:</strong> ${escapeHtml(cleanReplyEmail)}</p><p><strong>Message:</strong></p><p>${escapedMessage}</p>`,
+          subject,
+          html,
         }),
       });
 
@@ -207,52 +217,28 @@ export async function POST(request: Request) {
           message: 'Thank you! Your message has been sent successfully.',
         });
       }
-    }
-
-    if (!process.env.GMAIL_APP_PASSWORD) {
-      if (process.env.NODE_ENV === 'development') {
-        const logDir = process.cwd();
-        const logFile = path.join(logDir, 'messages.txt');
-        const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
-        const logEntry = `\n======================================\nDate: ${timestamp} PKT\nName: ${name}\nEmail: ${email}\nMessage: ${message}\n======================================\n`;
-        fs.appendFileSync(logFile, logEntry, 'utf8');
-
-        return NextResponse.json({
-          success: true,
-          message: 'Thank you! Your message has been sent successfully.',
-        });
+      console.error('Resend delivery failed with status', resendRes.status);
+      if (!config.useSmtp) {
+        throw new Error(`Resend responded with status ${resendRes.status}`);
       }
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Server email configuration error.',
-        },
-        {
-          status: 500,
-        },
-      );
     }
-
-    const cleanAppPassword = (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: recipientEmail,
-        pass: cleanAppPassword,
-      },
+      host: config.smtpHost,
+      port: config.smtpPort,
+      secure: config.smtpPort === 465,
+      auth: { user: config.smtpUser, pass: config.smtpPassword },
       connectionTimeout: 4000,
       greetingTimeout: 4000,
       socketTimeout: 4000,
     });
 
     await transporter.sendMail({
-      from: `"Portfolio Contact" <${recipientEmail}>`,
+      from: fromEmail,
       to: recipientEmail,
       replyTo: cleanReplyEmail,
-      subject: `New message from ${cleanHeader(trimmedName)}`,
-      html: `<p><strong>Name:</strong> ${escapedName}</p><p><strong>Email:</strong> ${escapeHtml(cleanReplyEmail)}</p><p><strong>Message:</strong></p><p>${escapedMessage}</p>`,
+      subject,
+      html,
     });
 
     return NextResponse.json({
@@ -261,23 +247,6 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Contact form SMTP error:', error);
-
-    if (process.env.NODE_ENV === 'development') {
-      try {
-        const logDir = process.cwd();
-        const logFile = path.join(logDir, 'messages.txt');
-        const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
-        const logEntry = `\n======================================\nDate: ${timestamp} PKT\nName: ${name}\nEmail: ${email}\nMessage: ${message}\n======================================\n`;
-        fs.appendFileSync(logFile, logEntry, 'utf8');
-
-        return NextResponse.json({
-          success: true,
-          message: 'Thank you! Your message has been sent successfully.',
-        });
-      } catch (fsError) {
-        console.error('Failed to write message to fallback file:', fsError);
-      }
-    }
 
     return NextResponse.json(
       {
